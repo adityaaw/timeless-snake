@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "timeless-sanke",
-    "slug": "timeless-sanke",
+    "name": "Snake",
+    "slug": "timeless-snake",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,19 +9,36 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#a3c43d"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.adwardstark.timelesssnake"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#a3c43d"
+      },
+      "package": "com.adwardstark.timelesssnake"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Pixeled.ttf"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "520c4fa5-2845-4001-ba97-361546c63118"
+      }
     }
   }
 }
