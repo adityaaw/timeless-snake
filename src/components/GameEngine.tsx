@@ -20,8 +20,10 @@ import {
   SCORE_INCREMENT,
   SNAKE_INITIAL_POSITION,
 } from "../constants/constants";
+import { GameContext } from "./GameContext";
 
 const GameEngine = () => {
+  const [theme, setTheme] = useState(ThemeColors.classic1998);
   const [direction, setDirection] = useState<Direction>(Direction.Right);
   const [snake, setSnake] = useState<Coordinate[]>(SNAKE_INITIAL_POSITION);
   const [food, setFood] = useState<Coordinate>(FOOD_INITIAL_POSITION);
@@ -124,18 +126,25 @@ const GameEngine = () => {
 
   return (
     <PanGestureHandler onGestureEvent={onHandleGestureEvent}>
-      <SafeAreaView style={styles.container}>
-        <Score score={score} isPaused={isPaused} isGameOver={isGameOver} />
-        <View style={styles.boundaries} onLayout={onLayout}>
-          <Snake snake={snake} />
-          <Food x={food.x} y={food.y} />
-        </View>
-        <Controls
-          reloadGame={reloadGame}
-          pauseGame={pauseGame}
-          isPaused={isPaused}
-          isGameOver={isGameOver}
-        />
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <GameContext.Provider value={{ theme, setTheme }}>
+          <Score score={score} isPaused={isPaused} isGameOver={isGameOver} />
+          <View
+            style={[styles.boundaries, { borderColor: theme.tertiary }]}
+            onLayout={onLayout}
+          >
+            <Snake snake={snake} />
+            <Food x={food.x} y={food.y} />
+          </View>
+          <Controls
+            reloadGame={reloadGame}
+            pauseGame={pauseGame}
+            isPaused={isPaused}
+            isGameOver={isGameOver}
+          />
+        </GameContext.Provider>
       </SafeAreaView>
     </PanGestureHandler>
   );

@@ -1,9 +1,20 @@
 import { StyleSheet, View } from "react-native";
 import { Coordinate } from "../types/types";
 import { ThemeColors } from "../styles/colors";
+import { GameContext } from "./GameContext";
+import { useContext } from "react";
 
 export default function Food({ x, y }: Coordinate) {
-  return <View style={[{ top: y * 10, left: x * 10 }, styles.food]} />;
+  const { theme } = useContext(GameContext);
+  return (
+    <View
+      style={[
+        { top: y * 10, left: x * 10 },
+        styles.food,
+        { backgroundColor: theme.secondary },
+      ]}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

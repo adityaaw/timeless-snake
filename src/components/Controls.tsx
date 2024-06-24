@@ -1,5 +1,7 @@
 import { TouchableOpacity, StyleSheet, View, Text } from "react-native";
 import { ThemeColors } from "../styles/colors";
+import { useContext } from "react";
+import { GameContext } from "./GameContext";
 
 type ControlProps = {
   reloadGame: () => void;
@@ -14,18 +16,28 @@ export default function Controls({
   isPaused,
   isGameOver,
 }: ControlProps) {
+  const { theme } = useContext(GameContext);
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.cta} onPress={reloadGame}>
-        <Text style={styles.text}>RESET</Text>
+      <TouchableOpacity
+        style={[styles.cta, { borderColor: theme.tertiary }]}
+        onPress={reloadGame}
+      >
+        <Text style={[styles.text, { color: theme.text }]}>RESET</Text>
       </TouchableOpacity>
 
       {!isGameOver && (
         <>
           <View style={{ marginHorizontal: 5 }} />
 
-          <TouchableOpacity style={styles.cta} onPress={pauseGame}>
-            <Text style={styles.text}>{isPaused ? "RESUME" : "PAUSE"}</Text>
+          <TouchableOpacity
+            style={[styles.cta, { borderColor: theme.tertiary }]}
+            onPress={pauseGame}
+          >
+            <Text style={[styles.text, { color: theme.text }]}>
+              {isPaused ? "RESUME" : "PAUSE"}
+            </Text>
           </TouchableOpacity>
         </>
       )}

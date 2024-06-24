@@ -1,5 +1,7 @@
 import { Text, StyleSheet, View } from "react-native";
 import { ThemeColors } from "../styles/colors";
+import { GameContext } from "./GameContext";
+import { useContext, useEffect } from "react";
 
 type ScoreProps = {
   score: number;
@@ -8,6 +10,8 @@ type ScoreProps = {
 };
 
 export default function Score({ score, isPaused, isGameOver }: ScoreProps) {
+  const { theme, setTheme } = useContext(GameContext);
+
   const gameState = () => {
     if (isPaused) {
       return "PAUSED";
@@ -18,13 +22,24 @@ export default function Score({ score, isPaused, isGameOver }: ScoreProps) {
     return "";
   };
 
+  useEffect(() => {
+    if (setTheme) {
+      if (score >= 450) {
+        setTheme(ThemeColors.bw);
+      }
+      if (score >= 850) {
+        setTheme(ThemeColors.wb);
+      }
+    }
+  }, [score, setTheme]);
+
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
-        <Text style={styles.text}>{gameState()}</Text>
-        <Text style={styles.text}>{score}</Text>
+        <Text style={[styles.text, { color: theme.text }]}>{gameState()}</Text>
+        <Text style={[styles.text, { color: theme.text }]}>{score}</Text>
       </View>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { borderColor: theme.tertiary }]} />
     </View>
   );
 }
