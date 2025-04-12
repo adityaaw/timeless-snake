@@ -1,0 +1,4 @@
+appId: com.adwardstark.timelesssnake
+---
+- launchApp
+- tapOn: "PAUSE"
