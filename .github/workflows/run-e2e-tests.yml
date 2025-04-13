@@ -11,6 +11,13 @@ on:
         description: 'EAS build profile (e.g. preview, production)'
         required: true
         default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+      commit:
+        description: 'Commit SHA for EAS build'
+        required: false
 
 jobs:
   e2e-tests:
@@ -19,11 +26,19 @@ jobs:
     steps:
     - name: 🏗 Setup repo
       uses: actions/checkout@v4.2.2
+      with:
+        fetch-depth: 0
 
     - name: 🏗 Set up Node
       uses: actions/setup-node@v4.2.0
       with:
         node-version: 20.x
+    
+    - name: 🏗 Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
     
     - name: 🏗 Setup yarn
       run: npm install -g yarn
@@ -37,27 +52,30 @@ jobs:
         eas-version: latest
         token: ${{ secrets.EXPO_TOKEN }}
 
-    - name: 🏗Fetch Latest EAS Build for Selected Branch/Profile
+    - name: 🏗 Fetch Latest EAS Build for Selected Branch/Profile
       id: get-apk-url
       env:
         ACT_BRANCH: ${{ env.ACT_BRANCH }}
         ACT_PROFILE: ${{ env.ACT_PROFILE }}
+        ACT_COMMIT: ${{ env.ACT_COMMIT }}
+        BRANCH: ${{ github.event.inputs.branch || env.ACT_BRANCH || 'master' }}
+        PROFILE: ${{ github.event.inputs.profile || env.ACT_PROFILE || 'preview' }}
+        COMMIT: ${{ github.event.inputs.commit || env.ACT_COMMIT }}
       run: |
-        BRANCH="${{ github.event.inputs.branch || env.ACT_BRANCH || 'master' }}"
-        PROFILE="${{ github.event.inputs.profile || env.ACT_PROFILE || 'preview' }}"
+        if [ -z "$COMMIT" ]; then
+          echo "No commit provided, getting latest commit hash for branch: $BRANCH"
+          COMMIT=$(git ls-remote origin "$BRANCH" | cut -f1)
+        fi
 
-        echo "Get latest commit hash for branch: $BRANCH"
-        COMMIT_HASH=$(git rev-parse $BRANCH)
-        echo "commit=$COMMIT_HASH" >> $GITHUB_OUTPUT
-
-        echo "Looking for latest EAS build for branch: $BRANCH, profile: $PROFILE"
+        echo "✅ Final commit to use: $COMMIT"
+        echo "Looking for latest EAS build for branch: $BRANCH, profile: $PROFILE with commit: $COMMIT"
         
         LATEST_BUILD=$(eas build:list \
           --platform android \
           --status finished \
           --non-interactive \
           --json | jq -r \
-          --arg commit "$COMMIT_HASH" \
+          --arg commit "$COMMIT" \
           --arg profile "$PROFILE" \
           '[.[] | select(.gitCommitHash == $commit and .buildProfile == $profile)][0].artifacts.buildUrl')
 
@@ -71,19 +89,21 @@ jobs:
     - name: 🏗 Download APK
       run: curl -L "${{ steps.get-apk-url.outputs.apk_url }}" -o app.apk
 
-    - name: 🏗 Set up Java
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
     - name: 🏗 Install Maestro CLI
       run: |
         curl -Ls "https://get.maestro.mobile.dev" | bash
         echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+    
+    - name: 🏗 Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
 
-    - name: 🏗 Start Android Emulator
+    - name: 🚀 Start Android Emulator & Run Maestro Tests
+      id: run-maestro
       uses: reactivecircus/android-emulator-runner@v2
+      continue-on-error: true
       with:
         api-level: 30
         target: google_apis
@@ -91,17 +111,15 @@ jobs:
         profile: pixel_3
         emulator-options: -no-window -no-audio
         script: |
-          echo "✅ Android emulator set up!"
+          echo "✅ Android emulator is ready, installing the APK"
           adb install app.apk
           adb shell input keyevent 82
-
-    - name: 🚀 Run Maestro Tests
-      id: test-run
-      run: maestro test ./maestro
+          echo "✅ APK installed, running Maestro tests"
+          maestro test .maestro
 
     - name: ❌ Upload Maestro Logs on failure
-      if: failure()
-      uses: actions/upload-artifact@v3
+      if: steps.run-maestro.outcome == 'failure'
+      uses: actions/upload-artifact@v4.6.1
       with:
         name: maestro-failure-logs
         path: ~/.maestro/tests
