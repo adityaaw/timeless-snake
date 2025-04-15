@@ -34,13 +34,7 @@ const GameEngine = () => {
 
   const moveSnake = useCallback(() => {
     const snakeHead = snake[0];
-    const newHead = { ...snakeHead }; // create a new head object to avoid mutating the original head
-
-    // GAME OVER
-    if (checkGameOver(snakeHead, gameBounds)) {
-      setIsGameOver((prev) => !prev);
-      return;
-    }
+    const newHead = { ...snakeHead };
 
     switch (direction) {
       case Direction.Up:
@@ -57,6 +51,17 @@ const GameEngine = () => {
         break;
       default:
         break;
+    }
+
+    // Check for self-collision
+    const isSelfCollision = snake.some(
+      (segment, index) => index !== 0 && segment.x === newHead.x && segment.y === newHead.y
+    );
+
+    // GAME OVER - Check both wall collision and self-collision
+    if (checkGameOver(newHead, gameBounds) || isSelfCollision) {
+      setIsGameOver(true);
+      return;
     }
 
     if (checkEatsFood(newHead, food, 2)) {
